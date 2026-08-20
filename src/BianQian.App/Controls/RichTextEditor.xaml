@@ -1,14 +1,37 @@
 <UserControl x:Class="BianQian.App.Controls.RichTextEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             MinHeight="30">
-    <RichTextBox x:Name="Editor"
-                 AcceptsReturn="True"
-                 BorderThickness="0"
-                 FontFamily="Segoe UI"
-                 FontSize="14"
-                 HorizontalScrollBarVisibility="Disabled"
-                 Padding="0,2"
-                 SpellCheck.IsEnabled="True"
-                 VerticalScrollBarVisibility="Disabled" />
+             Background="Transparent"
+             FontFamily="{DynamicResource GraphiteFontFamily}"
+             MinHeight="38">
+    <Border x:Name="EditorSurface"
+            Background="{DynamicResource GraphiteEditorBrush}"
+            BorderThickness="1"
+            CornerRadius="{DynamicResource GraphiteControlCornerRadius}"
+            Padding="7,5">
+        <Border.Style>
+            <Style TargetType="{x:Type Border}">
+                <Setter Property="BorderBrush" Value="{DynamicResource GraphiteTransparentBrush}" />
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource GraphiteAccentBrush}" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <RichTextBox x:Name="Editor"
+                     AcceptsReturn="True"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     CaretBrush="{DynamicResource GraphiteAccentBrush}"
+                     FontFamily="{DynamicResource GraphiteFontFamily}"
+                     FontSize="14"
+                     Foreground="{DynamicResource GraphitePrimaryTextBrush}"
+                     HorizontalScrollBarVisibility="Disabled"
+                     Padding="0,2"
+                     SelectionBrush="{DynamicResource GraphiteSelectionBrush}"
+                     SelectionOpacity="1"
+                     SpellCheck.IsEnabled="True"
+                     VerticalScrollBarVisibility="Disabled" />
+    </Border>
 </UserControl>

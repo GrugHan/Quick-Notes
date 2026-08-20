@@ -3,6 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:BianQian.App.Views"
         Title="Quick Notes — 快捷便签"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="{DynamicResource GraphiteFontFamily}"
+        Foreground="{DynamicResource GraphitePrimaryTextBrush}"
         Height="620"
         MinHeight="320"
         MinWidth="360"
@@ -10,6 +14,8 @@
         MouseLeave="OnPointerExited"
         LocationChanged="OnWindowBoundsChanged"
         SizeChanged="OnWindowBoundsChanged"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
         Topmost="True"
         Width="480"
         WindowStyle="None">
@@ -20,88 +26,154 @@
         <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding InsertTaskCommand}" />
     </Window.InputBindings>
 
-    <Grid Background="#FAFAF9">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="28" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <Border x:Name="WindowModeStrip"
-                Grid.Row="0"
-                Background="#F4F4F5"
-                BorderBrush="#D4D4D8"
-                BorderThickness="0,0,0,1"
-                MouseLeftButtonDown="OnWindowStripMouseLeftButtonDown">
-            <Grid Margin="8,0,4,0">
-                <TextBlock VerticalAlignment="Center"
-                           FontSize="12"
-                           Foreground="#3F3F46"
-                           Text="Quick Notes — 快捷便签" />
-                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                    <Button Background="Transparent"
-                            BorderThickness="0"
-                            Command="{Binding CollapseWindowCommand}"
-                            Content="收起"
-                            FontSize="11"
-                            Padding="8,2">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsWindowExpanded}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Button Background="Transparent"
-                            BorderThickness="0"
-                            Click="OnCloseClicked"
-                            Content="×"
-                            FontSize="14"
-                            Padding="8,0"
-                            ToolTip="关闭" />
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <Grid x:Name="EditorContent" Grid.Row="1">
+    <Border x:Name="MainShell"
+            Background="{DynamicResource GraphiteWindowBrush}"
+            BorderBrush="{DynamicResource GraphiteBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="{DynamicResource GraphiteShellCornerRadius}">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18"
+                              Direction="270"
+                              Opacity="0.36"
+                              ShadowDepth="4" />
+        </Border.Effect>
+        <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="28" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <ScrollViewer x:Name="NotesScrollViewer"
-                          Grid.Row="0"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Padding="20,14,20,12"
-                          ScrollChanged="OnNotesScrollChanged"
-                          VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Sections}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <views:DateSectionView />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <Border Grid.Row="1"
-                    Background="White"
-                    BorderBrush="#E4E4E7"
-                    BorderThickness="0,1,0,0"
-                    Padding="8">
-                <UniformGrid Columns="7">
-                    <Button Content="新建当天便签" Command="{Binding NewTodayCommand}" Padding="7,6" />
-                    <Button Content="加粗" Command="{Binding BoldCommand}" Padding="7,6" />
-                    <Button Content="放大字体" Command="{Binding IncreaseFontSizeCommand}" Padding="7,6" />
-                    <Button Content="缩小字体" Command="{Binding DecreaseFontSizeCommand}" Padding="7,6" />
-                    <Button Content="插入待办方框" Command="{Binding InsertTaskCommand}" Padding="7,6" />
-                    <Button Content="撤销" Command="{Binding UndoCommand}" Padding="7,6" />
-                    <Button Content="重做" Command="{Binding RedoCommand}" Padding="7,6" />
-                </UniformGrid>
+            <Border x:Name="WindowModeStrip"
+                    Grid.Row="0"
+                    BorderBrush="{DynamicResource GraphiteBorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="13,13,0,0"
+                    MouseLeftButtonDown="OnWindowStripMouseLeftButtonDown">
+                <Border.Style>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="Background" Value="{DynamicResource GraphiteToolbarBrush}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource GraphiteBorderBrush}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="12,0,5,0">
+                    <TextBlock VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{DynamicResource GraphiteSecondaryTextBrush}"
+                               Text="Quick Notes — 快捷便签" />
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                        <Button AutomationProperties.Name="收起便签窗口"
+                                Command="{Binding CollapseWindowCommand}"
+                                Content="收起">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}">
+                                    <Setter Property="Background" Value="{DynamicResource GraphiteTransparentBrush}" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Cursor" Value="Hand" />
+                                    <Setter Property="FocusVisualStyle" Value="{DynamicResource GraphiteFocusVisualStyle}" />
+                                    <Setter Property="FontFamily" Value="{DynamicResource GraphiteFontFamily}" />
+                                    <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="Foreground" Value="{DynamicResource GraphiteSecondaryTextBrush}" />
+                                    <Setter Property="Padding" Value="9,3" />
+                                    <Setter Property="Template" Value="{DynamicResource GraphiteButtonTemplate}" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsWindowExpanded}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button AutomationProperties.Name="关闭便签窗口"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="OnCloseClicked"
+                                Content="×"
+                                Cursor="Hand"
+                                FocusVisualStyle="{DynamicResource GraphiteFocusVisualStyle}"
+                                FontSize="14"
+                                Foreground="{DynamicResource GraphiteDangerBrush}"
+                                Padding="9,1"
+                                Template="{DynamicResource GraphiteButtonTemplate}"
+                                ToolTip="关闭" />
+                    </StackPanel>
+                </Grid>
             </Border>
+
+            <Grid x:Name="EditorContent"
+                  Grid.Row="1"
+                  Background="{DynamicResource GraphiteEditorBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ScrollViewer x:Name="NotesScrollViewer"
+                              Grid.Row="0"
+                              Background="{DynamicResource GraphiteEditorBrush}"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="22,16,18,14"
+                              ScrollChanged="OnNotesScrollChanged"
+                              VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Sections}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <views:DateSectionView />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Border Grid.Row="1"
+                        Background="{DynamicResource GraphiteToolbarBrush}"
+                        BorderBrush="{DynamicResource GraphiteBorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        CornerRadius="0,0,13,13"
+                        Padding="7,8,7,9">
+                    <UniformGrid x:Name="BottomToolbar" Columns="7">
+                        <Button AutomationProperties.Name="新建当天便签"
+                                Command="{Binding NewTodayCommand}"
+                                Content="＋"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="新建当天便签" />
+                        <Button AutomationProperties.Name="加粗"
+                                Command="{Binding BoldCommand}"
+                                Content="B"
+                                FontWeight="Bold"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="加粗" />
+                        <Button AutomationProperties.Name="放大字体"
+                                Command="{Binding IncreaseFontSizeCommand}"
+                                Content="A+"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="放大字体" />
+                        <Button AutomationProperties.Name="缩小字体"
+                                Command="{Binding DecreaseFontSizeCommand}"
+                                Content="A−"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="缩小字体" />
+                        <Button AutomationProperties.Name="插入待办方框"
+                                Command="{Binding InsertTaskCommand}"
+                                Content="☑"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="插入待办方框" />
+                        <Button AutomationProperties.Name="撤销"
+                                Command="{Binding UndoCommand}"
+                                Content="↶"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="撤销" />
+                        <Button AutomationProperties.Name="重做"
+                                Command="{Binding RedoCommand}"
+                                Content="↷"
+                                Style="{DynamicResource GraphiteToolbarButtonStyle}"
+                                ToolTip="重做" />
+                    </UniformGrid>
+                </Border>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </Window>

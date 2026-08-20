@@ -1,33 +1,55 @@
 <UserControl x:Class="BianQian.App.Views.TaskBlockView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid x:Name="TaskSurface" Margin="0,3">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <CheckBox Margin="0,3,8,0"
-                  VerticalAlignment="Top"
-                  IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                  Command="{Binding DataContext.ToggleTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                  CommandParameter="{Binding}" />
-        <TextBox Grid.Column="1"
-                 BorderThickness="0"
-                 FontFamily="Segoe UI"
-                 FontSize="14"
-                 Padding="0,0,0,2"
-                 Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}">
-            <TextBox.Style>
-                <Style TargetType="TextBox">
-                    <Setter Property="TextDecorations" Value="{x:Null}" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                            <Setter Property="TextDecorations" Value="Strikethrough" />
-                            <Setter Property="Foreground" Value="#71717A" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBox.Style>
-        </TextBox>
-    </Grid>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent"
+             FontFamily="{DynamicResource GraphiteFontFamily}">
+    <Border x:Name="TaskSurface"
+            Margin="0,3"
+            Padding="8,6"
+            Background="{DynamicResource GraphiteEditorBrush}"
+            BorderBrush="{DynamicResource GraphiteBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="{DynamicResource GraphiteTaskCornerRadius}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <CheckBox Margin="0,4,10,0"
+                      VerticalAlignment="Top"
+                      AutomationProperties.Name="切换待办完成状态"
+                      Command="{Binding DataContext.ToggleTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                      CommandParameter="{Binding}"
+                      IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                      Style="{DynamicResource GraphiteTaskCheckBoxStyle}" />
+            <TextBox x:Name="TaskText"
+                     Grid.Column="1"
+                     Background="Transparent"
+                     BorderBrush="{DynamicResource GraphiteTransparentBrush}"
+                     BorderThickness="1"
+                     CaretBrush="{DynamicResource GraphiteAccentBrush}"
+                     FontFamily="{DynamicResource GraphiteFontFamily}"
+                     FontSize="14"
+                     Foreground="{DynamicResource GraphitePrimaryTextBrush}"
+                     Padding="5,2,5,3"
+                     SelectionBrush="{DynamicResource GraphiteSelectionBrush}"
+                     SelectionOpacity="1"
+                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}">
+                <TextBox.Style>
+                    <Style TargetType="{x:Type TextBox}">
+                        <Setter Property="TextDecorations" Value="{x:Null}" />
+                        <Style.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource GraphiteAccentBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                <Setter Property="Foreground" Value="{DynamicResource GraphiteSecondaryTextBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </Grid>
+    </Border>
 </UserControl>

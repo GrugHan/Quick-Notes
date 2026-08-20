@@ -50,6 +50,7 @@ public sealed class NoteDocumentTests
 
         Assert.NotNull(restored);
         var restoredSection = Assert.Single(restored.Sections);
+        Assert.Equal(new DateOnly(2026, 8, 20), restoredSection.Date);
         Assert.True(restoredSection.IsCollapsed);
         var restoredText = Assert.IsType<TextBlock>(restoredSection.Blocks[0]);
         Assert.Equal("A note", restoredText.Text);

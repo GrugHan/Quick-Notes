@@ -1,23 +1,34 @@
-﻿using System.Text;
+using BianQian.App.Persistence;
+using BianQian.App.Services;
+using BianQian.App.ViewModels;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace BianQian.App;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
+    private SqliteNoteRepository? _repository;
+
     public MainWindow()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+        Closed += OnClosed;
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoaded;
+        _repository = SqliteNoteRepository.ForPath(App.DatabasePath);
+        var document = await _repository.LoadAsync(CancellationToken.None);
+        DataContext = new MainWindowViewModel(document, _repository, new SystemClock());
+    }
+
+    private async void OnClosed(object? sender, EventArgs e)
+    {
+        if (_repository is not null)
+        {
+            await _repository.DisposeAsync();
+        }
     }
 }

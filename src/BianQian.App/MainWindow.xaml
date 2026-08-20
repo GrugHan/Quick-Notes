@@ -1,12 +1,52 @@
-﻿<Window x:Class="BianQian.App.MainWindow"
+<Window x:Class="BianQian.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:BianQian.App"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        xmlns:views="clr-namespace:BianQian.App.Views"
+        Title="Quick Notes — 快捷便签"
+        Height="620"
+        MinHeight="320"
+        MinWidth="360"
+        Width="480">
+    <Window.InputBindings>
+        <KeyBinding Key="B" Modifiers="Control" Command="{Binding BoldCommand}" />
+        <KeyBinding Key="OemPeriod" Modifiers="Control+Shift" Command="{Binding IncreaseFontSizeCommand}" />
+        <KeyBinding Key="OemComma" Modifiers="Control+Shift" Command="{Binding DecreaseFontSizeCommand}" />
+        <KeyBinding Key="Enter" Modifiers="Control" Command="{Binding InsertTaskCommand}" />
+    </Window.InputBindings>
 
+    <Grid Background="#FAFAF9">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,14,20,12"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Sections}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <views:DateSectionView />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Border Grid.Row="1"
+                Background="White"
+                BorderBrush="#E4E4E7"
+                BorderThickness="0,1,0,0"
+                Padding="8">
+            <UniformGrid Columns="7">
+                <Button Content="新建当天便签" Command="{Binding NewTodayCommand}" Padding="7,6" />
+                <Button Content="加粗" Command="{Binding BoldCommand}" Padding="7,6" />
+                <Button Content="放大字体" Command="{Binding IncreaseFontSizeCommand}" Padding="7,6" />
+                <Button Content="缩小字体" Command="{Binding DecreaseFontSizeCommand}" Padding="7,6" />
+                <Button Content="插入待办方框" Command="{Binding InsertTaskCommand}" Padding="7,6" />
+                <Button Content="撤销" Command="{Binding UndoCommand}" Padding="7,6" />
+                <Button Content="重做" Command="{Binding RedoCommand}" Padding="7,6" />
+            </UniformGrid>
+        </Border>
     </Grid>
 </Window>

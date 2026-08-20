@@ -1,0 +1,171 @@
+using BianQian.App.Controls;
+using BianQian.App.Domain;
+using BianQian.App.Persistence;
+using BianQian.App.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
+
+namespace BianQian.App.ViewModels;
+
+public sealed class MainWindowViewModel : ObservableObject
+{
+    private readonly NoteDocument _document;
+    private readonly INoteRepository _repository;
+    private readonly IClock _clock;
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
+    private IEditorOperations? _activeEditor;
+    private DateSectionViewModel? _activeSection;
+
+    public MainWindowViewModel(NoteDocument document, INoteRepository repository, IClock clock)
+    {
+        _document = document;
+        _repository = repository;
+        _clock = clock;
+
+        Sections = new ObservableCollection<DateSectionViewModel>(
+            document.Sections.Select(section => new DateSectionViewModel(section, SaveAsync)));
+        NormalizeSectionToggleState();
+        _activeSection = Sections.LastOrDefault();
+
+        NewTodayCommand = new AsyncRelayCommand(NewTodayAsync);
+        ToggleDateSectionCommand = new AsyncRelayCommand<DateSectionViewModel>(ToggleDateSectionAsync);
+        InsertTaskCommand = new AsyncRelayCommand(InsertTaskAsync);
+        ToggleTaskCommand = new AsyncRelayCommand<TaskBlockViewModel>(ToggleTaskAsync);
+        BoldCommand = new AsyncRelayCommand(() => ApplyEditorMutationAsync(editor => editor.ToggleBold()));
+        IncreaseFontSizeCommand = new AsyncRelayCommand(
+            () => ApplyEditorMutationAsync(editor => editor.IncreaseFontSize()));
+        DecreaseFontSizeCommand = new AsyncRelayCommand(
+            () => ApplyEditorMutationAsync(editor => editor.DecreaseFontSize()));
+        UndoCommand = new AsyncRelayCommand(() => ApplyEditorMutationAsync(editor => editor.Undo()));
+        RedoCommand = new AsyncRelayCommand(() => ApplyEditorMutationAsync(editor => editor.Redo()));
+    }
+
+    public ObservableCollection<DateSectionViewModel> Sections { get; }
+
+    public IAsyncRelayCommand NewTodayCommand { get; }
+
+    public IAsyncRelayCommand<DateSectionViewModel> ToggleDateSectionCommand { get; }
+
+    public IAsyncRelayCommand InsertTaskCommand { get; }
+
+    public IAsyncRelayCommand<TaskBlockViewModel> ToggleTaskCommand { get; }
+
+    public IAsyncRelayCommand BoldCommand { get; }
+
+    public IAsyncRelayCommand IncreaseFontSizeCommand { get; }
+
+    public IAsyncRelayCommand DecreaseFontSizeCommand { get; }
+
+    public IAsyncRelayCommand UndoCommand { get; }
+
+    public IAsyncRelayCommand RedoCommand { get; }
+
+    public void SetActiveEditor(IEditorOperations editor) => _activeEditor = editor;
+
+    public void SetActiveSection(DateSectionViewModel section) => _activeSection = section;
+
+    public Task PersistEditAsync() => SaveAsync();
+
+    private async Task NewTodayAsync()
+    {
+        foreach (var section in Sections)
+        {
+            section.CanToggle = false;
+            section.SetCollapsed(false);
+        }
+
+        var now = _clock.Now;
+        var model = _document.AddToday(DateOnly.FromDateTime(now.LocalDateTime));
+        var text = new TextBlock(string.Empty, now);
+        model.Blocks.Add(text);
+
+        var viewModel = new DateSectionViewModel(model, SaveAsync)
+        {
+            CanToggle = true,
+        };
+        var textViewModel = viewModel.Blocks.OfType<TextBlockViewModel>().Single();
+        textViewModel.ShouldReceiveFocus = true;
+        Sections.Add(viewModel);
+        _activeSection = viewModel;
+
+        await SaveAsync();
+    }
+
+    private async Task ToggleDateSectionAsync(DateSectionViewModel? section)
+    {
+        if (section is null || !section.CanToggle || !ReferenceEquals(section, Sections.LastOrDefault()))
+        {
+            return;
+        }
+
+        section.SetCollapsed(!section.IsCollapsed);
+        await SaveAsync();
+    }
+
+    private async Task InsertTaskAsync()
+    {
+        var section = _activeSection ?? Sections.LastOrDefault();
+        if (section is null)
+        {
+            return;
+        }
+
+        var now = _clock.Now;
+        var taskIndex = section.Blocks.Count;
+        var task = _document.AddTask(section.Model.Id, taskIndex, now);
+        section.AddBlock(task, SaveAsync);
+        var continuation = new TextBlock(string.Empty, now);
+        section.Model.Blocks.Insert(taskIndex + 1, continuation);
+        section.AddBlock(continuation, SaveAsync, taskIndex + 1);
+        await SaveAsync();
+    }
+
+    private async Task ToggleTaskAsync(TaskBlockViewModel? task)
+    {
+        if (task is null)
+        {
+            return;
+        }
+
+        task.Toggle(_clock.Now);
+        await SaveAsync();
+    }
+
+    private async Task ApplyEditorMutationAsync(Action<IEditorOperations> mutation)
+    {
+        if (_activeEditor is null)
+        {
+            return;
+        }
+
+        mutation(_activeEditor);
+        await SaveAsync();
+    }
+
+    private void NormalizeSectionToggleState()
+    {
+        for (var index = 0; index < Sections.Count; index++)
+        {
+            var isNewest = index == Sections.Count - 1;
+            Sections[index].CanToggle = isNewest;
+            if (!isNewest)
+            {
+                Sections[index].SetCollapsed(false);
+            }
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        await _saveGate.WaitAsync();
+        try
+        {
+            await _repository.SaveAsync(_document, CancellationToken.None);
+        }
+        finally
+        {
+            _saveGate.Release();
+        }
+    }
+}

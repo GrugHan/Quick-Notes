@@ -1,0 +1,14 @@
+<UserControl x:Class="BianQian.App.Controls.RichTextEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinHeight="30">
+    <RichTextBox x:Name="Editor"
+                 AcceptsReturn="True"
+                 BorderThickness="0"
+                 FontFamily="Segoe UI"
+                 FontSize="14"
+                 HorizontalScrollBarVisibility="Disabled"
+                 Padding="0,2"
+                 SpellCheck.IsEnabled="True"
+                 VerticalScrollBarVisibility="Disabled" />
+</UserControl>

@@ -25,18 +25,18 @@
             <TextBox x:Name="TaskText"
                      Grid.Column="1"
                      Background="Transparent"
-                     BorderBrush="{DynamicResource GraphiteTransparentBrush}"
                      BorderThickness="1"
                      CaretBrush="{DynamicResource GraphiteAccentBrush}"
                      FontFamily="{DynamicResource GraphiteFontFamily}"
                      FontSize="14"
-                     Foreground="{DynamicResource GraphitePrimaryTextBrush}"
                      Padding="5,2,5,3"
                      SelectionBrush="{DynamicResource GraphiteSelectionBrush}"
                      SelectionOpacity="1"
                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}">
                 <TextBox.Style>
                     <Style TargetType="{x:Type TextBox}">
+                        <Setter Property="BorderBrush" Value="{DynamicResource GraphiteTransparentBrush}" />
+                        <Setter Property="Foreground" Value="{DynamicResource GraphitePrimaryTextBrush}" />
                         <Setter Property="TextDecorations" Value="{x:Null}" />
                         <Style.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">

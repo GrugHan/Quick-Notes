@@ -1,5 +1,6 @@
 using BianQian.App;
 using BianQian.App.Controls;
+using BianQian.App.ViewModels;
 using BianQian.App.Views;
 using FluentAssertions;
 using System.Runtime.ExceptionServices;
@@ -8,6 +9,8 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Threading;
+using TaskModel = BianQian.App.Domain.TaskBlock;
 
 namespace BianQian.Tests.Views;
 
@@ -71,9 +74,96 @@ public sealed class GraphiteThemeTests
             var editorSurface = editorView.FindName("EditorSurface").Should().BeOfType<Border>().Subject;
 
             AssertDynamicBrush(dateHeader, TextBlock.ForegroundProperty, ExpectedPalette["GraphiteSecondaryTextColor"]);
-            AssertDynamicBrush(taskText, TextBox.ForegroundProperty, ExpectedPalette["GraphitePrimaryTextColor"]);
+            AssertStyleDynamicBrush(
+                taskView,
+                taskText,
+                TextBox.ForegroundProperty,
+                "GraphitePrimaryTextBrush",
+                ExpectedPalette["GraphitePrimaryTextColor"]);
             AssertDynamicBrush(editor, RichTextBox.ForegroundProperty, ExpectedPalette["GraphitePrimaryTextColor"]);
             AssertDynamicBrush(editorSurface, Border.BackgroundProperty, ExpectedPalette["GraphiteEditorColor"]);
+        });
+    }
+
+    [Fact]
+    public void Completed_task_changes_to_secondary_struck_through_text()
+    {
+        RunInSta(() =>
+        {
+            var taskView = WithTheme(new TaskBlockView());
+            var viewModel = new TaskBlockViewModel(
+                new TaskModel("Pay bill", DateTimeOffset.Parse("2026-08-20T08:00:00Z")));
+            taskView.DataContext = viewModel;
+            var taskText = taskView.FindName("TaskText").Should().BeOfType<TextBox>().Subject;
+
+            BrushColor(taskText.Foreground).Should().Be(ExpectedPalette["GraphitePrimaryTextColor"]);
+
+            viewModel.Toggle(DateTimeOffset.Parse("2026-08-20T09:00:00Z"));
+            FlushDispatcher();
+
+            BrushColor(taskText.Foreground).Should().Be(ExpectedPalette["GraphiteSecondaryTextColor"]);
+            taskText.TextDecorations.Should().ContainSingle(decoration =>
+                decoration.Location == TextDecorationLocation.Strikethrough);
+        });
+    }
+
+    [Fact]
+    public void Keyboard_focused_task_changes_to_the_accent_border()
+    {
+        RunInSta(() =>
+        {
+            var taskView = WithTheme(new TaskBlockView());
+            var taskText = taskView.FindName("TaskText").Should().BeOfType<TextBox>().Subject;
+            var window = new Window
+            {
+                Content = taskView,
+                Height = 1,
+                Left = -10000,
+                ShowInTaskbar = false,
+                ShowActivated = false,
+                Top = -10000,
+                Width = 1,
+            };
+
+            try
+            {
+                BrushColor(taskText.BorderBrush).Should().Be(Colors.Transparent);
+                window.Show();
+                window.Activate();
+                taskText.Focus().Should().BeTrue();
+                FlushDispatcher();
+
+                taskText.IsKeyboardFocused.Should().BeTrue();
+                BrushColor(taskText.BorderBrush).Should().Be(ExpectedPalette["GraphiteAccentColor"]);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void Scrollbar_template_propagates_parent_orientation()
+    {
+        RunInSta(() =>
+        {
+            var theme = LoadTheme();
+            var style = theme["GraphiteScrollBarStyle"].Should().BeOfType<Style>().Subject;
+
+            foreach (var orientation in new[] { Orientation.Vertical, Orientation.Horizontal })
+            {
+                var scrollBar = new ScrollBar
+                {
+                    Orientation = orientation,
+                    Style = style,
+                };
+
+                scrollBar.ApplyTemplate().Should().BeTrue();
+                var track = scrollBar.Template.FindName("PART_Track", scrollBar)
+                    .Should().BeOfType<Track>().Subject;
+                track.Orientation.Should().Be(orientation);
+            }
         });
     }
 
@@ -93,6 +183,31 @@ public sealed class GraphiteThemeTests
         element.GetValue(property).Should().BeOfType<SolidColorBrush>()
             .Which.Color.Should().Be(expectedColor);
     }
+
+    private static void AssertStyleDynamicBrush(
+        FrameworkElement resourceOwner,
+        DependencyObject element,
+        DependencyProperty property,
+        string resourceKey,
+        Color expectedColor)
+    {
+        BrushColor(element.GetValue(property).Should().BeAssignableTo<Brush>().Subject)
+            .Should().Be(expectedColor);
+
+        var replacement = Color.FromRgb(0x12, 0x34, 0x56);
+        resourceOwner.Resources[resourceKey] = new SolidColorBrush(replacement);
+
+        BrushColor(element.GetValue(property).Should().BeAssignableTo<Brush>().Subject)
+            .Should().Be(replacement);
+    }
+
+    private static Color BrushColor(Brush brush) =>
+        brush.Should().BeOfType<SolidColorBrush>().Subject.Color;
+
+    private static void FlushDispatcher() =>
+        Dispatcher.CurrentDispatcher.Invoke(
+            DispatcherPriority.DataBind,
+            new Action(() => { }));
 
     private static ResourceDictionary LoadTheme()
     {

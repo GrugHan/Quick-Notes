@@ -6,7 +6,13 @@
         Height="620"
         MinHeight="320"
         MinWidth="360"
-        Width="480">
+        MouseEnter="OnPointerEntered"
+        MouseLeave="OnPointerExited"
+        LocationChanged="OnWindowBoundsChanged"
+        SizeChanged="OnWindowBoundsChanged"
+        Topmost="True"
+        Width="480"
+        WindowStyle="None">
     <Window.InputBindings>
         <KeyBinding Key="B" Modifiers="Control" Command="{Binding BoldCommand}" />
         <KeyBinding Key="OemPeriod" Modifiers="Control+Shift" Command="{Binding IncreaseFontSizeCommand}" />
@@ -16,37 +22,86 @@
 
     <Grid Background="#FAFAF9">
         <Grid.RowDefinitions>
+            <RowDefinition Height="28" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="20,14,20,12"
-                      VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Sections}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <views:DateSectionView />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-
-        <Border Grid.Row="1"
-                Background="White"
-                BorderBrush="#E4E4E7"
-                BorderThickness="0,1,0,0"
-                Padding="8">
-            <UniformGrid Columns="7">
-                <Button Content="新建当天便签" Command="{Binding NewTodayCommand}" Padding="7,6" />
-                <Button Content="加粗" Command="{Binding BoldCommand}" Padding="7,6" />
-                <Button Content="放大字体" Command="{Binding IncreaseFontSizeCommand}" Padding="7,6" />
-                <Button Content="缩小字体" Command="{Binding DecreaseFontSizeCommand}" Padding="7,6" />
-                <Button Content="插入待办方框" Command="{Binding InsertTaskCommand}" Padding="7,6" />
-                <Button Content="撤销" Command="{Binding UndoCommand}" Padding="7,6" />
-                <Button Content="重做" Command="{Binding RedoCommand}" Padding="7,6" />
-            </UniformGrid>
+        <Border x:Name="WindowModeStrip"
+                Grid.Row="0"
+                Background="#F4F4F5"
+                BorderBrush="#D4D4D8"
+                BorderThickness="0,0,0,1"
+                MouseLeftButtonDown="OnWindowStripMouseLeftButtonDown">
+            <Grid Margin="8,0,4,0">
+                <TextBlock VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="#3F3F46"
+                           Text="Quick Notes — 快捷便签" />
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Background="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding CollapseWindowCommand}"
+                            Content="收起"
+                            FontSize="11"
+                            Padding="8,2">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsWindowExpanded}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Background="Transparent"
+                            BorderThickness="0"
+                            Click="OnCloseClicked"
+                            Content="×"
+                            FontSize="14"
+                            Padding="8,0"
+                            ToolTip="关闭" />
+                </StackPanel>
+            </Grid>
         </Border>
+
+        <Grid x:Name="EditorContent" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ScrollViewer x:Name="NotesScrollViewer"
+                          Grid.Row="0"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="20,14,20,12"
+                          ScrollChanged="OnNotesScrollChanged"
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Sections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <views:DateSectionView />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <Border Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#E4E4E7"
+                    BorderThickness="0,1,0,0"
+                    Padding="8">
+                <UniformGrid Columns="7">
+                    <Button Content="新建当天便签" Command="{Binding NewTodayCommand}" Padding="7,6" />
+                    <Button Content="加粗" Command="{Binding BoldCommand}" Padding="7,6" />
+                    <Button Content="放大字体" Command="{Binding IncreaseFontSizeCommand}" Padding="7,6" />
+                    <Button Content="缩小字体" Command="{Binding DecreaseFontSizeCommand}" Padding="7,6" />
+                    <Button Content="插入待办方框" Command="{Binding InsertTaskCommand}" Padding="7,6" />
+                    <Button Content="撤销" Command="{Binding UndoCommand}" Padding="7,6" />
+                    <Button Content="重做" Command="{Binding RedoCommand}" Padding="7,6" />
+                </UniformGrid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

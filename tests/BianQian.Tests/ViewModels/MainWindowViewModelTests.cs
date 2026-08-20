@@ -143,6 +143,19 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Collapse_command_updates_the_exposed_window_mode()
+    {
+        var vm = CreateViewModel(new RecordingNoteRepository());
+        var windowMode = new RecordingWindowModeService();
+        vm.AttachWindowModeService(windowMode);
+
+        vm.CollapseWindowCommand.Execute(null);
+
+        windowMode.State.Mode.Should().Be(WindowMode.Collapsed);
+        vm.IsWindowExpanded.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Edit_then_flush_waits_for_pending_save_and_coalesces_followup_edits()
     {
         var document = DocumentWithText("before");
@@ -314,6 +327,42 @@ public sealed class MainWindowViewModelTests
 
         public Task SaveAsync(NoteDocument document, CancellationToken cancellationToken) =>
             Task.FromException(failure);
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    private sealed class RecordingWindowModeService : IWindowModeService
+    {
+        public WindowModeState State { get; } = new(WindowMode.Expanded);
+
+        public event EventHandler? ModeChanged;
+
+        public Task InitializeAsync(
+            IReadOnlyCollection<MonitorWorkArea> connectedMonitors,
+            MonitorWorkArea primaryMonitor,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public void SetMode(WindowMode mode)
+        {
+            State.Mode = mode;
+            ModeChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void PointerEntered() => SetMode(WindowMode.Expanded);
+
+        public void PointerExited()
+        {
+        }
+
+        public void RecordBounds(WindowBounds bounds)
+        {
+        }
+
+        public void RecordScrollOffset(double offset)
+        {
+        }
+
+        public Task FlushAsync() => Task.CompletedTask;
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }

@@ -18,6 +18,7 @@ public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
     private bool _isDisposed;
     private IEditorOperations? _activeEditor;
     private DateSectionViewModel? _activeSection;
+    private IWindowModeService? _windowModeService;
 
     public MainWindowViewModel(NoteDocument document, INoteRepository repository, IClock clock)
     {
@@ -44,6 +45,7 @@ public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
             () => ApplyEditorMutationAsync(editor => editor.DecreaseFontSize()));
         UndoCommand = new AsyncRelayCommand(() => ApplyEditorMutationAsync(editor => editor.Undo()));
         RedoCommand = new AsyncRelayCommand(() => ApplyEditorMutationAsync(editor => editor.Redo()));
+        CollapseWindowCommand = new RelayCommand(() => _windowModeService?.SetMode(WindowMode.Collapsed));
     }
 
     public ObservableCollection<DateSectionViewModel> Sections { get; }
@@ -66,11 +68,28 @@ public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
 
     public IAsyncRelayCommand RedoCommand { get; }
 
+    public IRelayCommand CollapseWindowCommand { get; }
+
+    public bool IsWindowExpanded => _windowModeService?.State.Mode != WindowMode.Collapsed;
+
     public Exception? LastSaveError => _saveCoordinator.LastError;
 
     public void SetActiveEditor(IEditorOperations editor) => _activeEditor = editor;
 
     public void SetActiveSection(DateSectionViewModel section) => _activeSection = section;
+
+    public void AttachWindowModeService(IWindowModeService windowModeService)
+    {
+        ArgumentNullException.ThrowIfNull(windowModeService);
+        if (_windowModeService is not null)
+        {
+            _windowModeService.ModeChanged -= OnWindowModeChanged;
+        }
+
+        _windowModeService = windowModeService;
+        _windowModeService.ModeChanged += OnWindowModeChanged;
+        OnPropertyChanged(nameof(IsWindowExpanded));
+    }
 
     public Task FlushAsync() => _saveCoordinator.FlushAsync();
 
@@ -85,6 +104,10 @@ public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
             }
 
             await FlushAsync();
+            if (_windowModeService is not null)
+            {
+                _windowModeService.ModeChanged -= OnWindowModeChanged;
+            }
             await _repository.DisposeAsync();
             _isDisposed = true;
         }
@@ -189,4 +212,7 @@ public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
     }
 
     private void RequestSave() => _saveCoordinator.RequestSave();
+
+    private void OnWindowModeChanged(object? sender, EventArgs e) =>
+        OnPropertyChanged(nameof(IsWindowExpanded));
 }

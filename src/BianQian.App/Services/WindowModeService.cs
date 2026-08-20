@@ -14,7 +14,7 @@ public sealed class WindowModeService : IWindowModeService
     private readonly IWindowModeHost _host;
     private readonly IWindowModeStateStore _store;
     private readonly ICollapseTimer _collapseTimer;
-    private readonly Func<bool> _settingsOwnsFocus;
+    private readonly Func<bool> _collapseIsFocusProtected;
     private readonly object _saveGate = new();
     private readonly double _expandedMinimumHeight;
     private Task _pendingSave = Task.CompletedTask;
@@ -24,12 +24,12 @@ public sealed class WindowModeService : IWindowModeService
         IWindowModeHost host,
         IWindowModeStateStore store,
         ICollapseTimer collapseTimer,
-        Func<bool> settingsOwnsFocus)
+        Func<bool> collapseIsFocusProtected)
     {
         _host = host;
         _store = store;
         _collapseTimer = collapseTimer;
-        _settingsOwnsFocus = settingsOwnsFocus;
+        _collapseIsFocusProtected = collapseIsFocusProtected;
         _expandedMinimumHeight = host.MinimumHeight;
 
         State = new WindowModeState(WindowMode.Expanded);
@@ -62,12 +62,13 @@ public sealed class WindowModeService : IWindowModeService
 
         ApplyMode(State.Mode);
         QueuePersist();
+        ModeChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void SetMode(WindowMode mode)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
-        if (mode == WindowMode.Collapsed && _settingsOwnsFocus())
+        if (mode == WindowMode.Collapsed && _collapseIsFocusProtected())
         {
             return;
         }
@@ -116,8 +117,16 @@ public sealed class WindowModeService : IWindowModeService
     public void RecordBounds(WindowBounds bounds)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
-        if (State.Mode != WindowMode.Expanded || !IsValid(bounds))
+        if (!IsValid(bounds))
         {
+            return;
+        }
+
+        if (State.Mode == WindowMode.Collapsed)
+        {
+            State.Left = bounds.Left;
+            State.Top = bounds.Top;
+            QueuePersist();
             return;
         }
 
@@ -164,15 +173,15 @@ public sealed class WindowModeService : IWindowModeService
     private void OnCollapseTimerTick(object? sender, EventArgs e)
     {
         _collapseTimer.Stop();
-        if (_settingsOwnsFocus())
+        if (_collapseIsFocusProtected())
         {
-            State.TryCollapse(settingsOwnsFocus: true);
+            State.TryCollapse(focusIsProtected: true);
             State.ScheduleCollapse();
             _collapseTimer.Start();
             return;
         }
 
-        if (!State.TryCollapse(settingsOwnsFocus: false))
+        if (!State.TryCollapse(focusIsProtected: false))
         {
             return;
         }

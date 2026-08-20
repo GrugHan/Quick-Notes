@@ -39,7 +39,7 @@ public sealed class WindowModeState
 
     public void PointerEntered() => IsCollapsePending = false;
 
-    public bool TryCollapse(bool settingsOwnsFocus)
+    public bool TryCollapse(bool focusIsProtected)
     {
         if (!IsCollapsePending)
         {
@@ -47,7 +47,7 @@ public sealed class WindowModeState
         }
 
         IsCollapsePending = false;
-        if (settingsOwnsFocus)
+        if (focusIsProtected)
         {
             return false;
         }
@@ -92,6 +92,52 @@ public interface ICollapseTimer
     void Start();
 
     void Stop();
+}
+
+public sealed class WindowCollapseFocusGuard
+{
+    private readonly object _gate = new();
+    private readonly List<Func<bool>> _guards = [];
+
+    public bool IsProtected
+    {
+        get
+        {
+            Func<bool>[] guards;
+            lock (_gate)
+            {
+                guards = _guards.ToArray();
+            }
+
+            return guards.Any(guard => guard());
+        }
+    }
+
+    public IDisposable Register(Func<bool> guard)
+    {
+        ArgumentNullException.ThrowIfNull(guard);
+        lock (_gate)
+        {
+            _guards.Add(guard);
+        }
+
+        return new Registration(this, guard);
+    }
+
+    private void Unregister(Func<bool> guard)
+    {
+        lock (_gate)
+        {
+            _guards.Remove(guard);
+        }
+    }
+
+    private sealed class Registration(WindowCollapseFocusGuard owner, Func<bool> guard) : IDisposable
+    {
+        private WindowCollapseFocusGuard? _owner = owner;
+
+        public void Dispose() => Interlocked.Exchange(ref _owner, null)?.Unregister(guard);
+    }
 }
 
 public static class WindowBoundsRestorer

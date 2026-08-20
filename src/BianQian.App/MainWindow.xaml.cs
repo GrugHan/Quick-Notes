@@ -13,12 +13,17 @@ public partial class MainWindow : Window
     private SqliteNoteRepository? _repository;
     private SettingsRepository? _settingsRepository;
     private IWindowModeService? _windowModeService;
+    private readonly WindowCollapseFocusGuard _collapseFocusGuard = new();
+    private readonly IDisposable _ownedWindowFocusRegistration;
     private bool _allowClose;
     private bool _isDrainingClose;
 
     public MainWindow()
     {
         InitializeComponent();
+        _ownedWindowFocusRegistration = _collapseFocusGuard.Register(() => OwnedWindows
+            .OfType<Window>()
+            .Any(window => window.IsActive || window.IsKeyboardFocusWithin));
         Loaded += OnLoaded;
         Closing += OnClosing;
     }
@@ -36,7 +41,7 @@ public partial class MainWindow : Window
             new WpfWindowModeHost(this, EditorContent, NotesScrollViewer),
             new SettingsWindowModeStateStore(_settingsRepository),
             new DispatcherCollapseTimer(),
-            SettingsOwnsFocus);
+            () => _collapseFocusGuard.IsProtected);
         viewModel.AttachWindowModeService(_windowModeService);
 
         var dpi = VisualTreeHelper.GetDpi(this);
@@ -68,9 +73,8 @@ public partial class MainWindow : Window
 
     private void OnCloseClicked(object sender, RoutedEventArgs e) => Close();
 
-    private bool SettingsOwnsFocus() => OwnedWindows
-        .OfType<Window>()
-        .Any(window => window.IsActive && window.GetType().Name == "SettingsWindow");
+    public IDisposable RegisterCollapseFocusGuard(Func<bool> guard) =>
+        _collapseFocusGuard.Register(guard);
 
     private async void OnClosing(object? sender, CancelEventArgs e)
     {
@@ -110,6 +114,8 @@ public partial class MainWindow : Window
                 await _settingsRepository.DisposeAsync();
                 _settingsRepository = null;
             }
+
+            _ownedWindowFocusRegistration.Dispose();
 
             _allowClose = true;
             Close();

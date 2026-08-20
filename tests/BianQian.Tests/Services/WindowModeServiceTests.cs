@@ -22,7 +22,7 @@ public sealed class WindowModeServiceTests
         var state = new WindowModeState(WindowMode.Expanded);
         state.ScheduleCollapse();
 
-        var collapsed = state.TryCollapse(settingsOwnsFocus: true);
+        var collapsed = state.TryCollapse(focusIsProtected: true);
 
         collapsed.Should().BeFalse();
         state.Mode.Should().Be(WindowMode.Expanded);
@@ -172,6 +172,119 @@ public sealed class WindowModeServiceTests
         host.RestoredScrollOffset.Should().Be(222);
         host.IsEditorVisible.Should().BeFalse();
         service.State.Height.Should().Be(700);
+    }
+
+    [Fact]
+    public async Task Moving_collapsed_strip_persists_its_location_and_expand_uses_remembered_size()
+    {
+        var host = new RecordingWindowModeHost
+        {
+            Bounds = new WindowBounds(40, 60, 480, 620),
+            ScrollOffset = 144,
+        };
+        var store = new RecordingWindowModeStateStore();
+        await using var service = new WindowModeService(
+            host,
+            store,
+            new ManualCollapseTimer(),
+            () => false);
+
+        service.SetMode(WindowMode.Collapsed);
+        await service.FlushAsync();
+        store.SavedStates.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+        {
+            Left = 40d,
+            Top = 60d,
+            Width = 480d,
+            Height = 620d,
+            Mode = WindowMode.Collapsed,
+            ScrollOffset = 144d,
+        });
+
+        service.RecordBounds(new WindowBounds(260, 180, 480, WindowModeService.CollapsedHeight));
+        await service.FlushAsync();
+
+        store.SavedStates.Last().Should().BeEquivalentTo(new
+        {
+            Left = 260d,
+            Top = 180d,
+            Width = 480d,
+            Height = 620d,
+            Mode = WindowMode.Collapsed,
+            ScrollOffset = 144d,
+        });
+
+        service.PointerEntered();
+        await service.FlushAsync();
+
+        host.Bounds.Should().Be(new WindowBounds(260, 180, 480, 620));
+        store.SavedStates.Last().Should().BeEquivalentTo(new
+        {
+            Left = 260d,
+            Top = 180d,
+            Width = 480d,
+            Height = 620d,
+            Mode = WindowMode.Expanded,
+            ScrollOffset = 144d,
+        });
+
+        service.RecordScrollOffset(333);
+        await service.FlushAsync();
+
+        store.SavedStates.Last().Should().BeEquivalentTo(new
+        {
+            Left = 260d,
+            Top = 180d,
+            Width = 480d,
+            Height = 620d,
+            Mode = WindowMode.Expanded,
+            ScrollOffset = 333d,
+        });
+    }
+
+    [Fact]
+    public void Registered_focus_guards_cover_owned_windows_and_popup_like_scopes()
+    {
+        var ownedSettingsWindowIsActive = false;
+        var popupIsOpen = false;
+        var focusGuard = new WindowCollapseFocusGuard();
+        using var ownedWindowRegistration = focusGuard.Register(() => ownedSettingsWindowIsActive);
+        using var popupRegistration = focusGuard.Register(() => popupIsOpen);
+
+        ownedSettingsWindowIsActive = true;
+        focusGuard.IsProtected.Should().BeTrue();
+
+        ownedSettingsWindowIsActive = false;
+        popupIsOpen = true;
+        focusGuard.IsProtected.Should().BeTrue();
+
+        popupIsOpen = false;
+        focusGuard.IsProtected.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Restoring_collapsed_mode_publishes_mode_change_for_bound_view_models()
+    {
+        var stored = new WindowModeState(WindowMode.Collapsed)
+        {
+            Left = 250,
+            Top = 100,
+            Width = 500,
+            Height = 700,
+        };
+        var primary = new MonitorWorkArea(0, 0, 1920, 1040);
+        await using var service = new WindowModeService(
+            new RecordingWindowModeHost(),
+            new RecordingWindowModeStateStore(stored),
+            new ManualCollapseTimer(),
+            () => false);
+        var modeChangedCount = 0;
+        service.ModeChanged += (_, _) => modeChangedCount++;
+
+        await service.InitializeAsync([primary], primary);
+
+        service.State.Mode.Should().Be(WindowMode.Collapsed);
+        modeChangedCount.Should().Be(1);
     }
 
     private sealed class RecordingWindowModeHost : IWindowModeHost

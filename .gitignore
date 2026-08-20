@@ -1,0 +1,8 @@
+.worktrees/
+.superpowers/
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+appsettings.local.json

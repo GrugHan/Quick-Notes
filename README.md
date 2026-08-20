@@ -2,12 +2,17 @@
 
 一款面向 Windows 10/11 的极简桌面便签：只有一页连续内容，随手记录；不用时收缩成置顶小条，鼠标移入后展开。
 
-> 项目正在开发中。目前尚未发布可安装版本；首个 MSIX 安装包完成验证后会在 [Releases](https://github.com/GrugHan/Quick-Notes/releases) 提供下载。
+[![Latest release](https://img.shields.io/github/v/release/GrugHan/Quick-Notes?include_prereleases&label=preview)](https://github.com/GrugHan/Quick-Notes/releases)
+[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0A84FF)](https://github.com/GrugHan/Quick-Notes)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/)
+
+> **发布状态：**[v0.1.0-preview.1](https://github.com/GrugHan/Quick-Notes/releases/tag/v0.1.0-preview.1) 是源码预览，尚无 `.msix` 安装文件，不能直接安装。首个可安装版本完成验证后会在 [Releases](https://github.com/GrugHan/Quick-Notes/releases) 提供下载。
 
 ## 下载与使用
 
 - [安装与使用指南](docs/USER_GUIDE.zh-CN.md)
-- [版本下载页面](https://github.com/GrugHan/Quick-Notes/releases)
+- [最新预览版 v0.1.0-preview.1](https://github.com/GrugHan/Quick-Notes/releases/tag/v0.1.0-preview.1)
+- [全部版本](https://github.com/GrugHan/Quick-Notes/releases)
 - [问题反馈](https://github.com/GrugHan/Quick-Notes/issues)
 
 ## 设计目标
@@ -21,8 +26,8 @@
 
 ## 当前进度
 
-- 已完成：.NET 8/WPF 项目基础、便签/日期块/待办领域模型、SQLite 本地存储、连续编辑界面。
-- 开发中：顶部收缩横条、设置与快捷键、OneDrive 同步、MSIX 安装包。
+- 已完成：.NET 8/WPF 项目基础、便签/日期块/待办领域模型、SQLite 本地存储、连续编辑界面、置顶收缩横条、石墨深灰主题。
+- 开发中：设置与快捷键、OneDrive 同步、MSIX 安装包。
 - 尚未提供：可下载安装文件。请不要将当前源码分支视为稳定发行版。
 
 ## 计划功能

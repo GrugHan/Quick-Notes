@@ -2,11 +2,11 @@ namespace BianQian.App.Domain;
 
 public sealed class NoteDocument
 {
-    private NoteDocument()
+    public NoteDocument()
     {
     }
 
-    public List<NoteSection> Sections { get; } = [];
+    public List<NoteSection> Sections { get; set; } = [];
 
     public static NoteDocument CreateEmpty() => new();
 

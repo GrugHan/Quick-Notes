@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BianQian.App.Domain;
 
 public sealed class TaskBlock : NoteBlock
@@ -11,6 +13,15 @@ public sealed class TaskBlock : NoteBlock
     private TaskBlock()
     {
         Text = string.Empty;
+    }
+
+    [JsonConstructor]
+    public TaskBlock(string text, DateTimeOffset createdAt, bool isCompleted, DateTimeOffset? completedAt)
+    {
+        Text = text;
+        CreatedAt = createdAt;
+        IsCompleted = isCompleted;
+        CompletedAt = completedAt;
     }
 
     public string Text { get; set; }

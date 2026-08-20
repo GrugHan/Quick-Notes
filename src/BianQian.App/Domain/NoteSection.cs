@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BianQian.App.Domain;
 
 public sealed class NoteSection
@@ -8,8 +10,17 @@ public sealed class NoteSection
         Date = date;
     }
 
-    private NoteSection()
+    public NoteSection()
     {
+    }
+
+    [JsonConstructor]
+    public NoteSection(Guid id, DateOnly date, bool isCollapsed, List<NoteBlock>? blocks)
+    {
+        Id = id;
+        Date = date;
+        IsCollapsed = isCollapsed;
+        Blocks = blocks ?? [];
     }
 
     public Guid Id { get; init; }
@@ -18,5 +29,5 @@ public sealed class NoteSection
 
     public bool IsCollapsed { get; set; }
 
-    public List<NoteBlock> Blocks { get; } = [];
+    public List<NoteBlock> Blocks { get; set; } = [];
 }

@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D806F38B-8C11-4E32-BEC0-4567585DE174}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BianQian.App", "src\BianQian.App\BianQian.App.csproj", "{ADC58953-8242-435E-8410-DC83D1845466}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B031F1B4-D462-44BF-A47C-1B864A5F5176}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BianQian.Tests", "tests\BianQian.Tests\BianQian.Tests.csproj", "{433B250D-796F-4F66-BEED-3EFF499CBAB9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADC58953-8242-435E-8410-DC83D1845466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADC58953-8242-435E-8410-DC83D1845466}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADC58953-8242-435E-8410-DC83D1845466}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADC58953-8242-435E-8410-DC83D1845466}.Release|Any CPU.Build.0 = Release|Any CPU
+		{433B250D-796F-4F66-BEED-3EFF499CBAB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{433B250D-796F-4F66-BEED-3EFF499CBAB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{433B250D-796F-4F66-BEED-3EFF499CBAB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{433B250D-796F-4F66-BEED-3EFF499CBAB9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{ADC58953-8242-435E-8410-DC83D1845466} = {D806F38B-8C11-4E32-BEC0-4567585DE174}
+		{433B250D-796F-4F66-BEED-3EFF499CBAB9} = {B031F1B4-D462-44BF-A47C-1B864A5F5176}
+	EndGlobalSection
+EndGlobal

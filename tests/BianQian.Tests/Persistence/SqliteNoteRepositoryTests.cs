@@ -1,6 +1,7 @@
 using BianQian.App.Domain;
 using BianQian.App.Persistence;
 using FluentAssertions;
+using Microsoft.Data.Sqlite;
 
 namespace BianQian.Tests.Persistence;
 
@@ -57,6 +58,8 @@ public sealed class SqliteNoteRepositoryTests : IDisposable
 
     public void Dispose()
     {
+        SqliteConnection.ClearAllPools();
+
         if (File.Exists(_databasePath))
         {
             File.Delete(_databasePath);

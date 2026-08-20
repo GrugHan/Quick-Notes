@@ -9,5 +9,10 @@ namespace BianQian.App;
 /// </summary>
 public partial class App : Application
 {
+    public static string DataDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "BianQian");
+
+    public static string DatabasePath { get; } = Path.Combine(DataDirectory, "bianqian.db");
 }
 

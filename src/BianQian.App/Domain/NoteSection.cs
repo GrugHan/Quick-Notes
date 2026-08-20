@@ -29,5 +29,6 @@ public sealed class NoteSection
 
     public bool IsCollapsed { get; set; }
 
-    public List<NoteBlock> Blocks { get; set; } = [];
+    [JsonInclude]
+    public List<NoteBlock> Blocks { get; private set; } = [];
 }

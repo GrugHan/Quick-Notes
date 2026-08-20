@@ -1,7 +1,10 @@
+using System.Text.Json.Serialization;
+
 namespace BianQian.App.Domain;
 
 public sealed class TextBlock : NoteBlock
 {
+    [JsonConstructor]
     public TextBlock(string text, DateTimeOffset createdAt)
     {
         Text = text;

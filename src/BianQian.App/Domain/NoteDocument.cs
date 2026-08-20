@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace BianQian.App.Domain;
 
 public sealed class NoteDocument
@@ -6,7 +8,8 @@ public sealed class NoteDocument
     {
     }
 
-    public List<NoteSection> Sections { get; set; } = [];
+    [JsonInclude]
+    public List<NoteSection> Sections { get; private set; } = [];
 
     public static NoteDocument CreateEmpty() => new();
 

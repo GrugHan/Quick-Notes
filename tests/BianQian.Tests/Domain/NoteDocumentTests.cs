@@ -51,7 +51,9 @@ public sealed class NoteDocumentTests
         Assert.NotNull(restored);
         var restoredSection = Assert.Single(restored.Sections);
         Assert.True(restoredSection.IsCollapsed);
-        Assert.IsType<TextBlock>(restoredSection.Blocks[0]);
+        var restoredText = Assert.IsType<TextBlock>(restoredSection.Blocks[0]);
+        Assert.Equal("A note", restoredText.Text);
+        Assert.Equal(DateTimeOffset.Parse("2026-08-20T08:00:00Z"), restoredText.CreatedAt);
         var restoredTask = Assert.IsType<TaskBlock>(restoredSection.Blocks[1]);
         Assert.Equal(task.CreatedAt, restoredTask.CreatedAt);
         Assert.Equal(task.CompletedAt, restoredTask.CompletedAt);

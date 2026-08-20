@@ -8,12 +8,14 @@ using System.Collections.ObjectModel;
 
 namespace BianQian.App.ViewModels;
 
-public sealed class MainWindowViewModel : ObservableObject
+public sealed class MainWindowViewModel : ObservableObject, IAsyncDisposable
 {
     private readonly NoteDocument _document;
     private readonly INoteRepository _repository;
     private readonly IClock _clock;
-    private readonly SemaphoreSlim _saveGate = new(1, 1);
+    private readonly NoteSaveCoordinator _saveCoordinator;
+    private readonly SemaphoreSlim _disposeGate = new(1, 1);
+    private bool _isDisposed;
     private IEditorOperations? _activeEditor;
     private DateSectionViewModel? _activeSection;
 
@@ -22,9 +24,12 @@ public sealed class MainWindowViewModel : ObservableObject
         _document = document;
         _repository = repository;
         _clock = clock;
+        _saveCoordinator = new NoteSaveCoordinator(
+            () => _repository.SaveAsync(_document, CancellationToken.None));
+        _saveCoordinator.SaveErrorChanged += (_, _) => OnPropertyChanged(nameof(LastSaveError));
 
         Sections = new ObservableCollection<DateSectionViewModel>(
-            document.Sections.Select(section => new DateSectionViewModel(section, SaveAsync)));
+            document.Sections.Select(section => new DateSectionViewModel(section, RequestSave)));
         NormalizeSectionToggleState();
         _activeSection = Sections.LastOrDefault();
 
@@ -61,11 +66,33 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public IAsyncRelayCommand RedoCommand { get; }
 
+    public Exception? LastSaveError => _saveCoordinator.LastError;
+
     public void SetActiveEditor(IEditorOperations editor) => _activeEditor = editor;
 
     public void SetActiveSection(DateSectionViewModel section) => _activeSection = section;
 
-    public Task PersistEditAsync() => SaveAsync();
+    public Task FlushAsync() => _saveCoordinator.FlushAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        await _disposeGate.WaitAsync();
+        try
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            await FlushAsync();
+            await _repository.DisposeAsync();
+            _isDisposed = true;
+        }
+        finally
+        {
+            _disposeGate.Release();
+        }
+    }
 
     private async Task NewTodayAsync()
     {
@@ -80,7 +107,7 @@ public sealed class MainWindowViewModel : ObservableObject
         var text = new TextBlock(string.Empty, now);
         model.Blocks.Add(text);
 
-        var viewModel = new DateSectionViewModel(model, SaveAsync)
+        var viewModel = new DateSectionViewModel(model, RequestSave)
         {
             CanToggle = true,
         };
@@ -114,10 +141,10 @@ public sealed class MainWindowViewModel : ObservableObject
         var now = _clock.Now;
         var taskIndex = section.Blocks.Count;
         var task = _document.AddTask(section.Model.Id, taskIndex, now);
-        section.AddBlock(task, SaveAsync);
+        section.AddBlock(task, RequestSave);
         var continuation = new TextBlock(string.Empty, now);
         section.Model.Blocks.Insert(taskIndex + 1, continuation);
-        section.AddBlock(continuation, SaveAsync, taskIndex + 1);
+        section.AddBlock(continuation, RequestSave, taskIndex + 1);
         await SaveAsync();
     }
 
@@ -158,14 +185,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private async Task SaveAsync()
     {
-        await _saveGate.WaitAsync();
-        try
-        {
-            await _repository.SaveAsync(_document, CancellationToken.None);
-        }
-        finally
-        {
-            _saveGate.Release();
-        }
+        await _saveCoordinator.RequestAndFlushAsync();
     }
+
+    private void RequestSave() => _saveCoordinator.RequestSave();
 }

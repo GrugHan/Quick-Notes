@@ -6,12 +6,12 @@ namespace BianQian.App.ViewModels;
 public sealed class TextBlockViewModel : ObservableObject
 {
     private readonly TextBlock _model;
-    private readonly Func<Task>? _saveAsync;
+    private readonly Action? _requestSave;
 
-    public TextBlockViewModel(TextBlock model, Func<Task>? saveAsync = null)
+    public TextBlockViewModel(TextBlock model, Action? requestSave = null)
     {
         _model = model;
-        _saveAsync = saveAsync;
+        _requestSave = requestSave;
     }
 
     public string Text
@@ -38,9 +38,6 @@ public sealed class TextBlockViewModel : ObservableObject
 
     private void QueueSave()
     {
-        if (_saveAsync is not null)
-        {
-            _ = _saveAsync();
-        }
+        _requestSave?.Invoke();
     }
 }

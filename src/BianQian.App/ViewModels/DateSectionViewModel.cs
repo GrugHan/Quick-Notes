@@ -9,10 +9,10 @@ public sealed class DateSectionViewModel : ObservableObject
     private readonly NoteSection _model;
     private bool _canToggle;
 
-    internal DateSectionViewModel(NoteSection model, Func<Task> saveAsync)
+    internal DateSectionViewModel(NoteSection model, Action requestSave)
     {
         _model = model;
-        Blocks = new ObservableCollection<object>(model.Blocks.Select(block => CreateBlock(block, saveAsync)));
+        Blocks = new ObservableCollection<object>(model.Blocks.Select(block => CreateBlock(block, requestSave)));
     }
 
     public DateOnly Date => _model.Date;
@@ -43,9 +43,9 @@ public sealed class DateSectionViewModel : ObservableObject
         OnPropertyChanged(nameof(IsExpanded));
     }
 
-    internal void AddBlock(NoteBlock block, Func<Task> saveAsync, int? index = null)
+    internal void AddBlock(NoteBlock block, Action requestSave, int? index = null)
     {
-        var viewModel = CreateBlock(block, saveAsync);
+        var viewModel = CreateBlock(block, requestSave);
         if (index is null || index.Value >= Blocks.Count)
         {
             Blocks.Add(viewModel);
@@ -56,10 +56,10 @@ public sealed class DateSectionViewModel : ObservableObject
         }
     }
 
-    private static object CreateBlock(NoteBlock block, Func<Task> saveAsync) => block switch
+    private static object CreateBlock(NoteBlock block, Action requestSave) => block switch
     {
-        TextBlock text => new TextBlockViewModel(text, saveAsync),
-        TaskBlock task => new TaskBlockViewModel(task, saveAsync),
+        TextBlock text => new TextBlockViewModel(text, requestSave),
+        TaskBlock task => new TaskBlockViewModel(task, requestSave),
         _ => throw new NotSupportedException($"Unsupported note block type: {block.GetType().Name}"),
     };
 }

@@ -142,6 +142,72 @@ public sealed class MainWindowViewModelTests
         repository.SaveCount.Should().Be(3);
     }
 
+    [Fact]
+    public async Task Edit_then_flush_waits_for_pending_save_and_coalesces_followup_edits()
+    {
+        var document = DocumentWithText("before");
+        var repository = new BlockingNoteRepository();
+        var vm = new MainWindowViewModel(document, repository, new FakeClock(Now));
+        var text = vm.Sections.Single().Blocks.OfType<TextBlockViewModel>().Single();
+
+        text.Text = "first";
+        await repository.FirstSaveStarted.Task;
+        text.Text = "second";
+        text.Text = "third";
+
+        var flush = vm.FlushAsync();
+        flush.IsCompleted.Should().BeFalse();
+        repository.ReleaseFirstSave.SetResult();
+        await flush;
+
+        repository.SavedTexts.Should().Equal("first", "third");
+        repository.MaximumConcurrentSaves.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Edit_then_close_waits_for_save_before_repository_disposal()
+    {
+        var document = DocumentWithText("before");
+        var repository = new BlockingNoteRepository();
+        var vm = new MainWindowViewModel(document, repository, new FakeClock(Now));
+        var text = vm.Sections.Single().Blocks.OfType<TextBlockViewModel>().Single();
+        text.Text = "after";
+        await repository.FirstSaveStarted.Task;
+
+        var close = vm.DisposeAsync().AsTask();
+
+        close.IsCompleted.Should().BeFalse();
+        repository.DisposeCount.Should().Be(0);
+        repository.ReleaseFirstSave.SetResult();
+        await close;
+        repository.DisposeCount.Should().Be(1);
+        repository.SavedTexts.Should().ContainSingle().Which.Should().Be("after");
+    }
+
+    [Fact]
+    public async Task Failed_pending_edit_is_observable_when_flushed()
+    {
+        var failure = new IOException("disk unavailable");
+        var document = DocumentWithText("before");
+        var repository = new FailingNoteRepository(failure);
+        var vm = new MainWindowViewModel(document, repository, new FakeClock(Now));
+        var text = vm.Sections.Single().Blocks.OfType<TextBlockViewModel>().Single();
+
+        text.Text = "after";
+
+        await FluentActions.Invoking(vm.FlushAsync).Should().ThrowAsync<IOException>()
+            .WithMessage("disk unavailable");
+        vm.LastSaveError.Should().BeSameAs(failure);
+    }
+
+    private static NoteDocument DocumentWithText(string text)
+    {
+        var document = NoteDocument.CreateEmpty();
+        var section = document.AddToday(new DateOnly(2026, 8, 20));
+        section.Blocks.Add(new TextBlock(text, Now));
+        return document;
+    }
+
     private static MainWindowViewModel CreateViewModel(
         RecordingNoteRepository repository,
         NoteDocument? document = null) =>
@@ -186,6 +252,68 @@ public sealed class MainWindowViewModelTests
             SaveCount++;
             return Task.CompletedTask;
         }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    private sealed class BlockingNoteRepository : INoteRepository
+    {
+        private readonly object _gate = new();
+        private int _activeSaves;
+
+        public TaskCompletionSource FirstSaveStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource ReleaseFirstSave { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public List<string> SavedTexts { get; } = [];
+
+        public int MaximumConcurrentSaves { get; private set; }
+
+        public int DisposeCount { get; private set; }
+
+        public Task<NoteDocument> LoadAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(NoteDocument.CreateEmpty());
+
+        public async Task SaveAsync(NoteDocument document, CancellationToken cancellationToken)
+        {
+            var active = Interlocked.Increment(ref _activeSaves);
+            MaximumConcurrentSaves = Math.Max(MaximumConcurrentSaves, active);
+            var savedText = document.Sections.Single().Blocks.OfType<TextBlock>().Single().Text;
+            var isFirst = false;
+            lock (_gate)
+            {
+                isFirst = SavedTexts.Count == 0;
+                SavedTexts.Add(savedText);
+            }
+
+            try
+            {
+                if (isFirst)
+                {
+                    FirstSaveStarted.SetResult();
+                    await ReleaseFirstSave.Task;
+                }
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeSaves);
+            }
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCount++;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class FailingNoteRepository(Exception failure) : INoteRepository
+    {
+        public Task<NoteDocument> LoadAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(NoteDocument.CreateEmpty());
+
+        public Task SaveAsync(NoteDocument document, CancellationToken cancellationToken) =>
+            Task.FromException(failure);
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }

@@ -2,7 +2,13 @@
 
 一款面向 Windows 10/11 的极简桌面便签：只有一页连续内容，随手记录；不用时收缩成置顶小条，鼠标移入后展开。
 
-> 项目正在开发中。目前尚未发布可安装版本；首个 MSIX 安装包完成验证后会在 [Releases](https://github.com/GrugHan/BianQian/releases) 提供下载。
+> 项目正在开发中。目前尚未发布可安装版本；首个 MSIX 安装包完成验证后会在 [Releases](https://github.com/GrugHan/Quick-Notes/releases) 提供下载。
+
+## 下载与使用
+
+- [安装与使用指南](docs/USER_GUIDE.zh-CN.md)
+- [版本下载页面](https://github.com/GrugHan/Quick-Notes/releases)
+- [问题反馈](https://github.com/GrugHan/Quick-Notes/issues)
 
 ## 设计目标
 
@@ -15,8 +21,8 @@
 
 ## 当前进度
 
-- 已完成：.NET 8/WPF 项目基础、便签/日期块/待办领域模型、JSON 往返验证、SQLite 本地存储基础。
-- 开发中：连续编辑界面、顶部收缩横条、设置与快捷键、OneDrive 同步、MSIX 安装包。
+- 已完成：.NET 8/WPF 项目基础、便签/日期块/待办领域模型、SQLite 本地存储、连续编辑界面。
+- 开发中：顶部收缩横条、设置与快捷键、OneDrive 同步、MSIX 安装包。
 - 尚未提供：可下载安装文件。请不要将当前源码分支视为稳定发行版。
 
 ## 计划功能
@@ -39,11 +45,11 @@ OneDrive 同步需要单独配置 Microsoft Entra 公共客户端；其客户端
 
 ## 参与方式
 
-欢迎通过 [Issues](https://github.com/GrugHan/BianQian/issues) 提交问题或建议。项目优先保持“少功能、低打扰、可立即记录”的原则。
+欢迎通过 [Issues](https://github.com/GrugHan/Quick-Notes/issues) 提交问题或建议。项目优先保持“少功能、低打扰、可立即记录”的原则。
 
 ## 发布与下载
 
-正式版本会在 [Releases](https://github.com/GrugHan/BianQian/releases) 发布，并附带：
+正式版本会在 [Releases](https://github.com/GrugHan/Quick-Notes/releases) 发布，并附带：
 
 - MSIX 安装文件
 - 版本说明与已知问题
